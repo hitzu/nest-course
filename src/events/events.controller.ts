@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateEventDto } from 'src/update-event.dto';
-import { Repository } from 'typeorm';
+import { Like, MoreThan, Repository } from 'typeorm';
 import { CreateEventDto } from '../create-event.dto';
 import { Event } from '../event.entity';
 @Controller('/events')
@@ -19,6 +19,26 @@ export class EventsController {
     @InjectRepository(Event)
     private readonly repository: Repository<Event>,
   ) {}
+
+  @Get('/practice')
+  async practice() {
+    return await this.repository.find({
+      select: ['id', 'when'],
+      where: [
+        {
+          id: MoreThan(3),
+          when: MoreThan(new Date('2021-02-12T13:00:00')),
+        },
+        {
+          description: Like('%meet%'),
+        },
+      ],
+      take: 2,
+      order: {
+        id: 'DESC',
+      },
+    });
+  }
 
   @Get()
   async findAll() {
