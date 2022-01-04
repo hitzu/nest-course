@@ -8,53 +8,53 @@ import {
   Body,
   HttpCode,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateEventDto } from 'src/update-event.dto';
+import { Repository } from 'typeorm';
 import { CreateEventDto } from '../create-event.dto';
 import { Event } from '../event.entity';
 @Controller('/events')
 export class EventsController {
-  private events: Event[] = [];
+  constructor(
+    @InjectRepository(Event)
+    private readonly repository: Repository<Event>,
+  ) {}
 
   @Get()
-  findAll() {
-    return this.events;
+  async findAll() {
+    return await this.repository.find();
   }
 
   @Get(':id')
-  findOne(@Param('id') id) {
-    const event = this.events.find((event) => event.id === parseInt(id));
+  async findOne(@Param('id') id) {
+    const event = await this.repository.findOne(id);
     return event;
   }
 
   @Post()
-  create(@Body() input: CreateEventDto) {
-    const eventToCreate = {
+  async create(@Body() input: CreateEventDto) {
+    await this.repository.save({
       ...input,
       when: new Date(input.when),
-      id: this.events.length + 1,
-    };
-    this.events.push(eventToCreate);
+    });
   }
 
   @Patch(':id')
-  update(@Param('id') id, @Body() input: UpdateEventDto) {
-    const eventIndex = this.events.findIndex(
-      (event) => event.id === parseInt(id),
-    );
+  async update(@Param('id') id, @Body() input: UpdateEventDto) {
+    const event = await this.repository.findOne(id);
 
-    this.events[eventIndex] = {
-      ...this.events[eventIndex],
+    return await this.repository.save({
+      ...event,
       ...input,
-      when: input.when ? new Date(input.when) : this.events[eventIndex].when,
-    };
-
-    return this.events[eventIndex];
+      when: input.when ? new Date(input.when) : event.when,
+    });
   }
 
   @Delete(':id')
   @HttpCode(204)
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  remove(@Param('id') id) {
-    this.events = this.events.filter((event) => event.id !== parseInt(id));
+  async remove(@Param('id') id) {
+    const event = await this.repository.findOne(id);
+    await this.repository.delete(event);
   }
 }
