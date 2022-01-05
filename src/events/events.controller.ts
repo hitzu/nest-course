@@ -7,6 +7,8 @@ import {
   Param,
   Body,
   HttpCode,
+  ParseIntPipe,
+  ValidationPipe,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateEventDto } from 'src/update-event.dto';
@@ -46,13 +48,14 @@ export class EventsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    console.log(typeof id);
     const event = await this.repository.findOne(id);
     return event;
   }
 
   @Post()
-  async create(@Body() input: CreateEventDto) {
+  async create(@Body(ValidationPipe) input: CreateEventDto) {
     await this.repository.save({
       ...input,
       when: new Date(input.when),
@@ -60,7 +63,7 @@ export class EventsController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id, @Body() input: UpdateEventDto) {
+  async update(@Param('id') id, @Body(ValidationPipe) input: UpdateEventDto) {
     const event = await this.repository.findOne(id);
 
     return await this.repository.save({
